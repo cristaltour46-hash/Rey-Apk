@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - 'ReyShop-builder-cloud-v5.zip'
+      - 'ReyShop-perbaikan-harga-barcode-v5.zip'
       - '.github/workflows/build-apk.yml'
 
 permissions:
@@ -28,25 +28,39 @@ jobs:
         with:
           gradle-version: '8.9'
 
+      
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
         with:
           packages: 'platform-tools'
 
+
       - name: Install Android SDK components
         run: sdkmanager "platforms;android-35" "build-tools;35.0.0" "platform-tools"
 
       - name: Extract Rey Shop source
-        run: unzip -q ReyShop-builder-cloud-v5.zip -d source
+        run: |
+          unzip -q ReyShop-perbaikan-harga-barcode-v5.zip -d source
+          echo "Folders found after extraction:"
+          find source -maxdepth 5 -type d -name android-wrapper -print
+          WRAPPER_DIR="$(find source -type d -name android-wrapper -print -quit)"
+          test -n "$WRAPPER_DIR" || { echo 'ERROR: folder android-wrapper tidak ditemukan di ZIP sumber.'; find source -maxdepth 4 -type f | head -80; exit 1; }
+          echo "WRAPPER_DIR=$WRAPPER_DIR" >> "$GITHUB_ENV"
 
       - name: Build debug APK
-        working-directory: source/ReyShop/android-wrapper
-        run: gradle --no-daemon assembleDebug --stacktrace
+        run: gradle --no-daemon -p "$WRAPPER_DIR" assembleDebug --stacktrace
+
+      - name: Prepare APK artifact
+        run: |
+          APK_PATH="$(find "$WRAPPER_DIR" -type f -path '*/outputs/apk/debug/*-debug.apk' -print -quit)"
+          test -n "$APK_PATH" || { echo 'ERROR: APK tidak ditemukan setelah build.'; find "$WRAPPER_DIR" -type f | tail -80; exit 1; }
+          mkdir -p output
+          cp "$APK_PATH" output/Rey-Shop-debug.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: Rey-Shop-debug-APK
-          path: source/ReyShop/android-wrapper/app/build/outputs/apk/debug/app-debug.apk
+          path: output/Rey-Shop-debug.apk
           if-no-files-found: error
           retention-days: 7
