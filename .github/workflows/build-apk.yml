@@ -37,7 +37,7 @@ jobs:
         run: sdkmanager "platforms;android-35" "build-tools;35.0.0" "platform-tools"
 
       - name: Extract Rey Shop source
-        run: unzip -q ReyShop-perbaikan-kamera.zip -d source
+        run: unzip -q ReyShop-builder-cloud-v5.zip -d source
 
       - name: Build debug APK
         working-directory: source/ReyShop/android-wrapper
