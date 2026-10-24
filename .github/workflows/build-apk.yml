@@ -55,7 +55,7 @@ jobs:
           APK_PATH="$(find "$WRAPPER_DIR" -type f -path '*/outputs/apk/debug/*-debug.apk' -print -quit)"
           test -n "$APK_PATH" || { echo 'ERROR: APK tidak ditemukan setelah build.'; find "$WRAPPER_DIR" -type f | tail -80; exit 1; }
           mkdir -p output
-          cp "$APK_PATH" output/Rey-Shop-debug.apk
+          cp "$APK_PATH" output/Rey-Shop.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
