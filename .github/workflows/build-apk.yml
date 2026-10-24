@@ -1,0 +1,78 @@
+
+name: Build Rey Shop APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'ReyShop-perbaikan-v23.zip'
+      - '.github/workflows/build-apk.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source package
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+          
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: 'platform-tools'
+
+      - name: Install Android SDK components
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0" "platform-tools"
+
+      - name: Extract Rey Shop source and locate Android wrapper
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f ReyShop-perbaikan-v23.zip || { echo 'ERROR: ZIP sumber tidak ditemukan di root repositori.'; exit 1; }
+          unzip -tq ReyShop-perbaikan-v23.zip
+          mkdir -p source
+          unzip -q ReyShop-perbaikan-v23.zip -d source
+          WRAPPER_DIR="$(find source -type d -name android-wrapper -print -quit)"
+          if [ -z "$WRAPPER_DIR" ]; then
+            echo 'ERROR: folder android-wrapper tidak ditemukan setelah ZIP diekstrak.'
+            find source -maxdepth 5 -type d -print
+            exit 1
+          fi
+          if [ ! -f "$WRAPPER_DIR/app/build.gradle" ] || [ ! -f "$WRAPPER_DIR/settings.gradle" ]; then
+            echo "ERROR: file Gradle wajib tidak lengkap di $WRAPPER_DIR"
+            find "$WRAPPER_DIR" -maxdepth 3 -type f -print
+            exit 1
+          fi
+          echo "ANDROID_WRAPPER_DIR=$WRAPPER_DIR" >> "$GITHUB_ENV"
+
+      - name: Build debug APK
+        working-directory: ${{ env.ANDROID_WRAPPER_DIR }}
+        run: gradle --no-daemon assembleDebug --stacktrace
+
+      - name: Rename APK
+        run: |
+          set -euo pipefail
+          APK_PATH="$ANDROID_WRAPPER_DIR/app/build/outputs/apk/debug/app-debug.apk"
+          test -f "$APK_PATH"
+          cp "$APK_PATH" Rey-Shop-v23-debug.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Rey-Shop-v23-debug-APK
+          path: Rey-Shop-v23-debug.apk
+          if-no-files-found: error
+          retention-days: 7
