@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - 'ReyShop-perbaikan-harga-barcode-v5.zip'
+      - 'ReyShop-perbaikan-v23.zip'
       - '.github/workflows/build-apk.yml'
 
 permissions:
@@ -40,7 +40,7 @@ jobs:
 
       - name: Extract Rey Shop source
         run: |
-          unzip -q ReyShop-perbaikan-harga-barcode-v5.zip -d source
+          unzip -q ReyShop-perbaikan-v23.zip -d source
           echo "Folders found after extraction:"
           find source -maxdepth 5 -type d -name android-wrapper -print
           WRAPPER_DIR="$(find source -type d -name android-wrapper -print -quit)"
